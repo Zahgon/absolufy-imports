@@ -6,3 +6,6 @@ coverage.xml
 *.egg-info/
 build/
 dist/
+
+.aider*
+logs/
