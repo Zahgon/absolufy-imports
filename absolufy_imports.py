@@ -11,13 +11,7 @@ from typing import Tuple
 
 
 def _find_relative_depth(parts: Sequence[str], module: str) -> int:
-    depth = 0
-    for n, _ in enumerate(parts, start=1):
-        if module.startswith('.'.join(parts[:n])):
-            depth += 1
-        else:
-            break
-    return depth
+    pass
 
 
 class Visitor(ast.NodeVisitor):
@@ -34,62 +28,7 @@ class Visitor(ast.NodeVisitor):
         self.never = never
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
-        level = node.level
-        is_absolute = level == 0
-        absolute_import = '.'.join(self.parts[:-level])
-
-        should_be_relative = bool(self.never)
-        if is_absolute ^ should_be_relative:
-            self.generic_visit(node)
-            return
-
-        def is_python_file_or_dir(path: str) -> bool:
-            return os.path.exists(path+'.py') or os.path.isdir(path)
-
-        if should_be_relative:
-            assert node.module is not None  # help mypy
-            if not any(
-                is_python_file_or_dir(
-                    os.path.join(src, *node.module.split('.')),
-                ) for src in self.srcs
-            ):
-                # Can't convert to relative, might be third-party
-                return
-            depth = _find_relative_depth(self.parts, node.module)
-            if depth == 0:
-                # don't attempt relative import beyond top-level package
-                return
-            inverse_depth = len(self.parts) - depth
-            if node.module == '.'.join(self.parts[:depth]):
-                n_dots = inverse_depth
-            else:
-                # e.g. from a.b.c import d -> from ..c import d
-                n_dots = inverse_depth - 1
-            replacement = f'\\1{"."*n_dots}'
-
-            self.to_replace[node.lineno] = (
-                rf'(from\s+){".".join(self.parts[:depth])}',
-                replacement,
-            )
-            self.generic_visit(node)
-            return
-
-        if node.module is None:
-            # e.g. from . import b
-            self.to_replace[
-                node.lineno
-            ] = (rf'(from\s+){"."*level}\s*', f'\\1{absolute_import} ')
-        else:
-            # e.g. from .b import c
-            module = node.module
-            self.to_replace[
-                node.lineno
-            ] = (
-                rf'(from\s+){"."*level}{module}',
-                f'\\1{absolute_import}.{module}',
-            )
-
-        self.generic_visit(node)
+        pass
 
 
 def absolute_imports(
